@@ -1,0 +1,129 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LoveOS Configuration Schema",
+  "description": "Configuration schema for LoveOS application",
+  "type": "object",
+  "properties": {
+    "apiBaseUrl": {
+      "type": "string",
+      "description": "Base URL for the backend API"
+    },
+    "showNsfw": {
+      "type": "boolean",
+      "description": "Whether to show NSFW content"
+    },
+    "appName": {
+      "type": "string",
+      "description": "Name of the application"
+    },
+    "version": {
+      "type": "string",
+      "description": "Application version"
+    },
+    "loverName": {
+      "type": "string",
+      "description": "Name of your lover"
+    },
+    "primaryColor": {
+      "type": "string",
+      "description": "Primary color in hex format (e.g., #FF4081)"
+    },
+    "accentColor": {
+      "type": "string",
+      "description": "Accent color in hex format (e.g., #03A9F4)"
+    },
+    "darkMode": {
+      "type": "boolean",
+      "description": "Whether to use dark mode"
+    },
+    "animationSpeed": {
+      "type": "integer",
+      "description": "Animation speed in milliseconds"
+    },
+    "defaultFontSize": {
+      "type": "number",
+      "description": "Default font size"
+    },
+    "enableNotifications": {
+      "type": "boolean",
+      "description": "Whether to enable notifications"
+    },
+    "autoSave": {
+      "type": "boolean",
+      "description": "Whether to auto-save files"
+    },
+    "language": {
+      "type": "string",
+      "description": "Application language code"
+    },
+    "terminalWelcomeMessage": {
+      "type": "string",
+      "description": "Welcome message displayed in the terminal"
+    },
+    "windowHeadings": {
+      "type": "object",
+      "description": "Custom headings for different windows",
+      "properties": {
+        "kiss": {
+          "type": "string",
+          "description": "Heading for kiss command window"
+        },
+        "hug": {
+          "type": "string",
+          "description": "Heading for hug command window"
+        },
+        "cuddle": {
+          "type": "string",
+          "description": "Heading for cuddle command window"
+        },
+        "terminal": {
+          "type": "string",
+          "description": "Heading for terminal window"
+        },
+        "browser": {
+          "type": "string",
+          "description": "Heading for browser window"
+        }
+      }
+    },
+    "backend": {
+      "type": "object",
+      "description": "Backend-specific configuration",
+      "properties": {
+        "port": {
+          "type": "integer",
+          "description": "Port for the backend server"
+        },
+        "host": {
+          "type": "string",
+          "description": "Host for the backend server"
+        },
+        "debug": {
+          "type": "boolean",
+          "description": "Whether to run in debug mode"
+        },
+        "waifuPicsApiUrl": {
+          "type": "string",
+          "description": "URL for the Waifu.pics API"
+        },
+        "nekosApiUrl": {
+          "type": "string",
+          "description": "URL for the Nekos API"
+        },
+        "allowNsfw": {
+          "type": "boolean",
+          "description": "Whether to allow NSFW content on the backend"
+        },
+        "mongoDbUrl": {
+          "type": "string",
+          "description": "MongoDB connection URL"
+        },
+        "mongoDbName": {
+          "type": "string",
+          "description": "MongoDB database name"
+        }
+      }
+    }
+  },
+  "required": ["apiBaseUrl", "appName", "version"]
+}

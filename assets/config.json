@@ -1,0 +1,23 @@
+{
+  "apiBaseUrl": "http://127.0.0.1:8000",
+  "showNsfw": true,
+  "appName": "LoveOS",
+  "version": "1.0.0",
+  "loverName": "Eshal",
+  "primaryColor": "#FF4081",
+  "accentColor": "#03A9F4",
+  "darkMode": false,
+  "animationSpeed": 300,
+  "defaultFontSize": 16,
+  "enableNotifications": true,
+  "autoSave": true,
+  "language": "en",
+  "terminalWelcomeMessage": "hai hai eshal! welcome to your LoveOS",
+  "windowHeadings": {
+    "kiss": "kisses for you <3",
+    "hug": "warm hugs for eshal",
+    "cuddle": "cuddles with love",
+    "terminal": "eshal's terminal",
+    "browser": "lovey dovey browser"
+  }
+}

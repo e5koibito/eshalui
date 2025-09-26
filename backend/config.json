@@ -1,0 +1,10 @@
+{
+  "port": 8000,
+  "host": "0.0.0.0",
+  "debug": true,
+  "waifuPicsApiUrl": "https://api.waifu.pics",
+  "nekosApiUrl": "https://nekos.best/api/v2",
+  "allowNsfw": true,
+  "mongoDbUrl": "mongodb://localhost:27017",
+  "mongoDbName": "loveos"
+}

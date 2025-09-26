@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+motor
+pymongo
+pymongo-inmemory
+pydantic
+python-dotenv
+httpx
