@@ -28,7 +28,46 @@ The project is divided into two main parts: a Flutter frontend and a FastAPI bac
     -   `/background`: Fetches the desktop background image and streams it to the client. This was changed from a redirect to a streaming response to solve a CORS issue.
     -   `/image-proxy`: A generic image proxy. It takes a URL as a query parameter, fetches the image on the server-side, and streams the image data back. This is the final and most critical piece of the CORS solution.
 
-## 3. Key Technical Challenge: CORS
+## 3. Recent Issues and Solutions
+
+### 3.1 Compilation Errors
+1. **Config.apiUrl Not Found**
+   - **Problem**: The application was using `Config.apiUrl` which doesn't exist in the Config class
+   - **Solution**: Updated all instances to use `Config.get('apiBaseUrl')` in both main.dart and files_provider.dart
+
+2. **setBackgroundColor Implementation Error**
+   - **Problem**: WebViewController was calling an unimplemented method `setBackgroundColor`
+   - **Solution**: Removed the call to `setBackgroundColor` as it's not implemented on all platforms
+
+### 3.2 API Integration Issues
+1. **Terminal Commands Returning 404**
+   - **Problem**: Commands like kiss, hug, cuddle returned "Error sending command: 404"
+   - **Solution**: Updated the endpoint structure in main.dart and ensured proper API integration
+
+2. **Fixed Source Commands**
+   - **Problem**: Commands were fetching from fixed sources instead of using the API
+   - **Solution**: Implemented proper API integration for all commands with error handling
+
+### 3.3 File System Implementation
+1. **Mock Data Only**
+   - **Problem**: File system was using only mock data without API integration
+   - **Solution**: Updated FilesProvider to integrate with API endpoints while maintaining mock data as fallback
+
+### 3.4 Command Functionality
+1. **Limited Command Set**
+   - **Problem**: Only basic SFW commands were implemented
+   - **Solution**: Added additional SFW commands (pat, handhold) and implemented NSFW command structure
+
+### 3.5 Flutter Run Issues
+- **Debug Commands**:
+  - `d` - Detach (terminate "flutter run" but leave application running)
+  - `c` - Clear the screen
+  - `q` - Quit (terminate the application on the device)
+- **Font Loading Issues**: 
+  - Error loading Roboto font from Google Fonts
+  - "TypeError: Failed to fetch" errors in the console
+
+## 4. Key Technical Challenge: CORS
 
 The most significant challenge in this project was Cross-Origin Resource Sharing (CORS). The Flutter web client, running on a specific origin (e.g., `http://localhost:12345`), is blocked by the browser from making requests to different origins (e.g., `api.waifu.pics` or `i.pinimg.com`).
 

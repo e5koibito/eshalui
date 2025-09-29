@@ -1,10 +1,14 @@
 {
   "port": 8000,
-  "host": "0.0.0.0",
+  "host": "127.0.0.1",
   "debug": true,
   "waifuPicsApiUrl": "https://api.waifu.pics",
   "nekosApiUrl": "https://nekos.best/api/v2",
+  "hentaicordApiUrl": "https://api.hentaicord.net",
+  "waifuImApiUrl": "https://waifu.im/api",
   "allowNsfw": true,
   "mongoDbUrl": "mongodb://localhost:27017",
-  "mongoDbName": "loveos"
+  "mongoDbName": "loveos",
+  "sudoPassword": "love123",
+  "hentaicordApiToken": "3e8ed80877034373bfbe0b6fa58a7a0f"
 }

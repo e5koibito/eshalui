@@ -43,3 +43,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Secrets (do not commit)
+/backend/secrets.txt
+/backend/mongodb_password.txt

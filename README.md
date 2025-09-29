@@ -31,9 +31,18 @@ A simple, lovey-dovey themed WebOS built with Flutter and FastAPI, created with 
 ### Known Issues & Pending Improvements
 * **Window Resizing:** Windows cannot be properly resized yet
 * **Browser Functionality:** Web browser is not fully functional
+  * `setBackgroundColor` implementation error in WebViewController
+  * Font loading issues with Roboto font from Google Fonts
 * **Loading Animation:** Need to implement proper loading animations
 * **File System Sync:** File system can post files to API but has issues fetching them
 * **UI Responsiveness:** Needs improvement for different screen sizes
+* **API Integration Issues:**
+  * Terminal commands return 404 errors when sent to backend
+  * Commands like `kiss`, `hug`, and `cuddle` fetch from fixed sources instead of API
+* **Flutter Run Commands:**
+  * `d` - Detach (terminate "flutter run" but leave application running)
+  * `c` - Clear the screen
+  * `q` - Quit (terminate the application on the device)
 
 ## Tech Stack
 

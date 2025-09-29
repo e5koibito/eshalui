@@ -11,12 +11,19 @@ from typing import List, Optional
 import json
 import os
 
+# Import our new API service
+from api.waifu_api import waifu_api_service
+from database.file_system import file_system_manager
+
+print(f"File system manager imported: {file_system_manager}")
+print(f"File system manager base path: {file_system_manager.base_path}")
+
 # Default configuration
 MONGO_DETAILS = "mongodb://localhost:27017"
 MONGO_DB_NAME = "loveos"
 WAIFU_PICS_BASE_API = "https://api.waifu.pics"
 NEKOS_API_URL = "https://nekos.best/api/v2"
-PORT = 8005
+PORT = 8000
 HOST = "127.0.0.1"
 DEBUG = True
 ALLOW_NSFW = True
@@ -377,6 +384,294 @@ async def image_proxy(url: str):
     except Exception as e:
         print(f"Error in image_proxy: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to proxy image: {str(e)}")
+
+@app.get("/api/categories")
+async def get_categories(content_type: str = "sfw"):
+    """Get available categories for all APIs"""
+    try:
+        categories = await waifu_api_service.get_categories(content_type)
+        return {"success": True, "categories": categories}
+    except Exception as e:
+        print(f"Error getting categories: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get categories: {str(e)}")
+
+@app.get("/api/hentaicord-categories")
+async def get_hentaicord_categories():
+    """Get categories from hentaicord API"""
+    try:
+        api_token = None
+        try:
+            config_path = os.path.join(os.path.dirname(__file__), "config.json")
+            if os.path.exists(config_path):
+                with open(config_path, "r") as f:
+                    config = json.load(f)
+                    api_token = config.get("hentaicordApiToken")
+        except:
+            pass
+        
+        categories = await waifu_api_service.get_hentaicord_categories(api_token)
+        return {"success": True, "categories": categories}
+    except Exception as e:
+        print(f"Error getting hentaicord categories: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get hentaicord categories: {str(e)}")
+
+@app.get("/api/status")
+async def get_api_status():
+    """Get status of all APIs"""
+    try:
+        status = {}
+        
+        # Test each API
+        for api_type in waifu_api_service.apis.keys():
+            try:
+                success, _, source = await waifu_api_service._try_api(
+                    api_type, "waifu", "sfw", None
+                )
+                status[api_type.value] = {
+                    "available": success,
+                    "priority": waifu_api_service.apis[api_type]["priority"]
+                }
+            except:
+                status[api_type.value] = {
+                    "available": False,
+                    "priority": waifu_api_service.apis[api_type]["priority"]
+                }
+        
+        return {"success": True, "apis": status}
+    except Exception as e:
+        print(f"Error getting API status: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get API status: {str(e)}")
+
+
+# Commands endpoint for terminal interactions
+class CommandRequest(BaseModel):
+    type: str
+
+@app.post("/commands")
+async def execute_command(command: CommandRequest):
+    """Handle terminal commands from the Flutter app using the new API service"""
+    try:
+        command_type = command.type.lower()
+        
+        # Determine if it's NSFW and get the category
+        is_nsfw = command_type.startswith("nsfw")
+        category = command_type.replace("nsfw", "") if is_nsfw else command_type
+        
+        # Check if NSFW is allowed
+        if is_nsfw and not ALLOW_NSFW:
+            return {"success": False, "message": "NSFW commands are disabled"}
+        
+        # Get API token for hentaicord if available
+        api_token = None
+        try:
+            config_path = os.path.join(os.path.dirname(__file__), "config.json")
+            if os.path.exists(config_path):
+                with open(config_path, "r") as f:
+                    config = json.load(f)
+                    api_token = config.get("hentaicordApiToken")
+        except:
+            pass
+        
+        # Use the new API service with fallback
+        success, image_url, source_api = await waifu_api_service.get_image(
+            category=category,
+            is_nsfw=is_nsfw,
+            api_token=api_token
+        )
+        
+        if success:
+            return {
+                "success": True, 
+                "url": image_url, 
+                "message": f"Sent {command_type} from {source_api}!",
+                "source": source_api
+            }
+        else:
+            # Final fallback to cute GIF
+            fallback_url = f"https://cataas.com/cat/gif?filter={category}"
+            return {
+                "success": True, 
+                "url": fallback_url, 
+                "message": f"Sent {command_type} (fallback)!",
+                "source": "fallback"
+            }
+            
+    except Exception as e:
+        print(f"Error in execute_command: {str(e)}")
+        return {"success": False, "message": f"Error executing command: {str(e)}"}
+
+
+# File system endpoints for terminal commands
+@app.get("/files")
+async def list_files(path: str = "/"):
+    """List files and directories at the given path"""
+    try:
+        items = file_system_manager.list_directory(path)
+        return {
+            "path": path,
+            "items": [item.to_dict() for item in items]
+        }
+        
+    except Exception as e:
+        print(f"Error in list_files: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to list files: {str(e)}")
+
+@app.get("/files/content")
+async def get_file_content(path: str):
+    """Get the content of a file"""
+    print(f"Getting file content for path: {path}")
+    print(f"File system manager type: {type(file_system_manager)}")
+    print(f"File system manager base path: {file_system_manager.base_path}")
+    
+    try:
+        success, content = file_system_manager.get_file_content(path)
+        print(f"File system manager returned: success={success}, content_length={len(content) if content else 0}")
+        
+        if success:
+            return {"path": path, "content": content}
+        else:
+            print(f"File not found, raising 404 with detail: {content}")
+            raise HTTPException(status_code=404, detail=content)
+    except Exception as e:
+        print(f"Exception in get_file_content: {type(e).__name__}: {e}")
+        raise
+
+class FileCreateRequest(BaseModel):
+    path: str
+    content: str = ""
+
+@app.post("/files/create")
+async def create_file(request: FileCreateRequest):
+    """Create a new file"""
+    try:
+        success, message = file_system_manager.create_file(request.path, request.content)
+        
+        if success:
+            return {"success": True, "message": message}
+        else:
+            raise HTTPException(status_code=400, detail=message)
+        
+    except Exception as e:
+        print(f"Error in create_file: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create file: {str(e)}")
+
+class DirectoryCreateRequest(BaseModel):
+    path: str
+
+@app.post("/files/mkdir")
+async def create_directory(request: DirectoryCreateRequest):
+    """Create a new directory"""
+    try:
+        success, message = file_system_manager.create_directory(request.path)
+        
+        if success:
+            return {"success": True, "message": message}
+        else:
+            raise HTTPException(status_code=400, detail=message)
+        
+    except Exception as e:
+        print(f"Error in create_directory: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create directory: {str(e)}")
+
+@app.delete("/files/delete")
+async def delete_file(path: str):
+    """Delete a file or directory"""
+    try:
+        success, message = file_system_manager.delete_file(path)
+        
+        if success:
+            return {"success": True, "message": message}
+        else:
+            raise HTTPException(status_code=400, detail=message)
+        
+    except Exception as e:
+        print(f"Error in delete_file: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete file: {str(e)}")
+
+@app.delete("/files/rmdir")
+async def delete_directory(path: str):
+    """Delete a directory"""
+    try:
+        success, message = file_system_manager.delete_directory(path)
+        
+        if success:
+            return {"success": True, "message": message}
+        else:
+            raise HTTPException(status_code=400, detail=message)
+        
+    except Exception as e:
+        print(f"Error in delete_directory: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete directory: {str(e)}")
+
+@app.get("/files/info")
+async def get_file_info(path: str):
+    """Get detailed information about a file or directory"""
+    try:
+        item = file_system_manager.get_file_info(path)
+        
+        if item:
+            return {"success": True, "item": item.to_dict()}
+        else:
+            raise HTTPException(status_code=404, detail="File or directory not found")
+        
+    except Exception as e:
+        print(f"Error in get_file_info: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get file info: {str(e)}")
+
+@app.get("/files/pwd")
+async def get_current_directory():
+    """Get current directory path"""
+    try:
+        current_path = file_system_manager.get_current_path()
+        return {"path": current_path}
+        
+    except Exception as e:
+        print(f"Error in get_current_directory: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get current directory: {str(e)}")
+
+@app.post("/files/cd")
+async def change_directory(path: str):
+    """Change current directory"""
+    try:
+        success, message = file_system_manager.change_directory(path)
+        
+        if success:
+            return {"success": True, "path": message}
+        else:
+            raise HTTPException(status_code=400, detail=message)
+        
+    except Exception as e:
+        print(f"Error in change_directory: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to change directory: {str(e)}")
+
+
+# Password management for sudo
+class SudoRequest(BaseModel):
+    password: str
+
+@app.post("/sudo")
+async def sudo_command(request: SudoRequest):
+    """Verify sudo password"""
+    try:
+        # Load password from config
+        config_password = None
+        try:
+            config_path = os.path.join(os.path.dirname(__file__), "config.json")
+            if os.path.exists(config_path):
+                with open(config_path, "r") as f:
+                    config = json.load(f)
+                    config_password = config.get("sudoPassword", "love123")
+        except:
+            config_password = "love123"  # Default password
+        
+        if request.password == config_password:
+            return {"success": True, "message": "Password verified"}
+        else:
+            return {"success": False, "message": "Incorrect password"}
+            
+    except Exception as e:
+        print(f"Error in sudo_command: {str(e)}")
+        return {"success": False, "message": f"Error verifying password: {str(e)}"}
 
 if __name__ == "__main__":
     import uvicorn

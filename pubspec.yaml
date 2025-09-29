@@ -40,6 +40,9 @@ dependencies:
   webview_flutter: ^4.4.2
   webview_flutter_web: ^0.2.2+3
   flutter_svg: ^2.2.1
+  video_player: ^2.8.2
+  photo_view: ^0.14.0
+  cached_network_image: ^3.3.1
 
 dev_dependencies:
   flutter_test:
@@ -65,8 +68,9 @@ flutter:
 
   assets:
     - assets/config.json
-    - assets/images/background.svg
-    - lib/quotes.json
+    - assets/images/
+    - assets/quotes.json
+    - assets/cute_responses.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
