@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../theme/app_theme.dart';
 
@@ -69,8 +71,10 @@ class _BrowserWindowState extends State<BrowserWindow> {
                   icon: const Icon(Icons.arrow_back),
                   color: AppTheme.textPrimary,
                   onPressed: () async {
-                    if (await _controller.canGoBack()) {
-                      await _controller.goBack();
+                    if (!kIsWeb) {
+                      if (await _controller.canGoBack()) {
+                        await _controller.goBack();
+                      }
                     }
                   },
                 ),
@@ -78,8 +82,10 @@ class _BrowserWindowState extends State<BrowserWindow> {
                   icon: const Icon(Icons.arrow_forward),
                   color: AppTheme.textPrimary,
                   onPressed: () async {
-                    if (await _controller.canGoForward()) {
-                      await _controller.goForward();
+                    if (!kIsWeb) {
+                      if (await _controller.canGoForward()) {
+                        await _controller.goForward();
+                      }
                     }
                   },
                 ),
@@ -87,7 +93,14 @@ class _BrowserWindowState extends State<BrowserWindow> {
                   icon: const Icon(Icons.refresh),
                   color: AppTheme.textPrimary,
                   onPressed: () {
-                    _controller.reload();
+                    if (!kIsWeb) {
+                      _controller.reload();
+                    } else {
+                      final url = _urlController.text;
+                      if (url.isNotEmpty) {
+                        _openExternal(url);
+                      }
+                    }
                   },
                 ),
                 Expanded(
@@ -114,7 +127,11 @@ class _BrowserWindowState extends State<BrowserWindow> {
                       if (!url.startsWith('http')) {
                         url = 'https://$url';
                       }
-                      _controller.loadRequest(Uri.parse(url));
+                      if (kIsWeb) {
+                        _openExternal(url);
+                      } else {
+                        _controller.loadRequest(Uri.parse(url));
+                      }
                     },
                   ),
                 ),
@@ -122,7 +139,12 @@ class _BrowserWindowState extends State<BrowserWindow> {
                   icon: const Icon(Icons.home),
                   color: AppTheme.textPrimary,
                   onPressed: () {
-                    _controller.loadRequest(Uri.parse('https://www.google.com'));
+                    final url = 'https://www.google.com';
+                    if (kIsWeb) {
+                      _openExternal(url);
+                    } else {
+                      _controller.loadRequest(Uri.parse(url));
+                    }
                   },
                 ),
               ],
@@ -130,33 +152,58 @@ class _BrowserWindowState extends State<BrowserWindow> {
           ),
           // Browser content
           Expanded(
-            child: Stack(
-              children: [
-                WebViewWidget(controller: _controller),
-                if (isLoading)
-                  Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const CircularProgressIndicator(
-                          color: AppTheme.primaryPink,
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          "Loading...",
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: AppTheme.textPrimary,
+            child: kIsWeb
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.open_in_new, color: AppTheme.textPrimary),
+                          const SizedBox(height: 12),
+                          Text(
+                            'WebView is not supported in Flutter Web here. Opened in a new tab.',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.textPrimary),
+                            textAlign: TextAlign.center,
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
+                  )
+                : Stack(
+                    children: [
+                      WebViewWidget(controller: _controller),
+                      if (isLoading)
+                        Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const CircularProgressIndicator(
+                                color: AppTheme.primaryPink,
+                              ),
+                              const SizedBox(height: 20),
+                              Text(
+                                "Loading...",
+                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                  color: AppTheme.textPrimary,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
                   ),
-              ],
-            ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _openExternal(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 }

@@ -3,7 +3,8 @@ import 'package:video_player/video_player.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:http/http.dart' as http;
-import 'dart:io';
+// Removed dart:io for web compatibility
+import '../config.dart';
 import '../theme/app_theme.dart';
 
 class MediaPlayer extends StatefulWidget {
@@ -35,16 +36,7 @@ class _MediaPlayerState extends State<MediaPlayer> {
 
   Future<void> _initializeMedia() async {
     try {
-      // First, validate the URL
-      await _validateUrl();
-      
-      if (!_isValidUrl) {
-        setState(() {
-          _error = "Invalid or inaccessible URL";
-          _isLoading = false;
-        });
-        return;
-      }
+      // Skip pre-validation to avoid CORS issues on web
 
       // Check if the URL is a video based on file extension
       final url = widget.url.toLowerCase();
@@ -70,15 +62,11 @@ class _MediaPlayerState extends State<MediaPlayer> {
     }
   }
 
-  Future<void> _validateUrl() async {
-    try {
-      final response = await http.head(Uri.parse(widget.url));
-      if (response.statusCode >= 400) {
-        _isValidUrl = false;
-      }
-    } catch (e) {
-      _isValidUrl = false;
-    }
+  String _proxiedImageUrl(String original) {
+    final base = Config.get('apiBaseUrl');
+    if (base == null || base.isEmpty) return original;
+    final encoded = Uri.encodeComponent(original);
+    return '$base/image-proxy?url=$encoded';
   }
 
   @override
@@ -206,10 +194,33 @@ class _MediaPlayerState extends State<MediaPlayer> {
   }
 
   Widget _buildImagePlayer() {
+    final imageUrl = _proxiedImageUrl(widget.url);
+    final isGif = widget.url.toLowerCase().endsWith('.gif');
+
+    if (isGif) {
+      // Use plain Image for GIFs to ensure animation on web
+      return Center(
+        child: InteractiveViewer(
+          child: Image.network(
+            imageUrl,
+            fit: BoxFit.contain,
+            filterQuality: FilterQuality.medium,
+            errorBuilder: (context, error, stack) => _imageError(),
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return const Center(
+                child: CircularProgressIndicator(color: Colors.pink),
+              );
+            },
+          ),
+        ),
+      );
+    }
+
     return PhotoView(
       imageProvider: CachedNetworkImageProvider(
-        widget.url,
-        errorListener: (exception, stackTrace) {
+        imageUrl,
+        errorListener: (exception) {
           print('Image loading error: $exception');
         },
       ),
@@ -220,28 +231,32 @@ class _MediaPlayerState extends State<MediaPlayer> {
       loadingBuilder: (context, event) => const Center(
         child: CircularProgressIndicator(color: Colors.pink),
       ),
-      errorBuilder: (context, error, stackTrace) => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.broken_image,
-              color: Colors.red,
-              size: 64,
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Failed to load image',
-              style: TextStyle(color: Colors.white, fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'URL: ${widget.url}',
-              style: const TextStyle(color: Colors.grey, fontSize: 12),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+      errorBuilder: (context, error, stackTrace) => _imageError(),
+    );
+  }
+
+  Widget _imageError() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.broken_image,
+            color: Colors.red,
+            size: 64,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Failed to load image',
+            style: TextStyle(color: Colors.white, fontSize: 16),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'URL: ${widget.url}',
+            style: const TextStyle(color: Colors.grey, fontSize: 12),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -255,9 +270,14 @@ class MediaWindow extends StatelessWidget {
   
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final isSmall = size.width < 600;
+    final width = isSmall ? size.width : 600.0;
+    final height = isSmall ? size.height * 0.7 : 500.0;
+
     return Container(
-      width: 600,
-      height: 500,
+      width: width,
+      height: height,
       decoration: AppTheme.mediaPlayerDecoration,
       child: MediaPlayer(
         url: url,

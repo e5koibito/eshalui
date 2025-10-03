@@ -261,6 +261,16 @@ class FileSystemManager:
         
         except Exception as e:
             return False, f"Error reading file: {e}"
+
+    def save_file(self, virtual_path: str, content: str) -> Tuple[bool, str]:
+        """Save content to a file, creating it if necessary"""
+        try:
+            real_path = self._get_real_path(virtual_path)
+            real_path.parent.mkdir(parents=True, exist_ok=True)
+            real_path.write_text(content, encoding='utf-8')
+            return True, f"Saved file: {virtual_path}"
+        except Exception as e:
+            return False, f"Error saving file: {e}"
     
     def create_file(self, virtual_path: str, content: str = "") -> Tuple[bool, str]:
         """Create a new file"""

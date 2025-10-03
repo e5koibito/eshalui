@@ -368,7 +368,7 @@ class _FinderWindowState extends State<FinderWindow> {
                 ),
                 IconButton(
                   onPressed: _createDirectory,
-                  icon: const Icon(Icons.folder_add, color: AppTheme.textPrimary),
+                  icon: const Icon(Icons.create_new_folder, color: AppTheme.textPrimary),
                   tooltip: 'Create Directory',
                 ),
               ],

@@ -12,6 +12,9 @@ class AppTheme {
   static const Color successColor = Color(0xFF4CAF50);
   static const Color warningColor = Color(0xFFFF9800);
   static const Color errorColor = Color(0xFFF44336);
+  // Added aliases expected by widgets
+  static const Color primaryColor = primaryPink;
+  static const Color borderColor = Color(0xFF3A3A3A);
 
   static ThemeData get darkTheme {
     return ThemeData(

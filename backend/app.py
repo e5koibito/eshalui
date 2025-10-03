@@ -487,8 +487,9 @@ async def execute_command(command: CommandRequest):
                 "source": source_api
             }
         else:
-            # Final fallback to cute GIF
-            fallback_url = f"https://cataas.com/cat/gif?filter={category}"
+            # Final fallback to cute GIF (valid Cataas endpoint)
+            safe_tag = category.strip().lower() or "cute"
+            fallback_url = f"https://cataas.com/cat/gif/{safe_tag}"
             return {
                 "success": True, 
                 "url": fallback_url, 
@@ -554,6 +555,23 @@ async def create_file(request: FileCreateRequest):
     except Exception as e:
         print(f"Error in create_file: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to create file: {str(e)}")
+
+class FileSaveRequest(BaseModel):
+    path: str
+    content: str
+
+@app.post("/files/save")
+async def save_file(request: FileSaveRequest):
+    """Save edits to a file"""
+    try:
+        success, message = file_system_manager.save_file(request.path, request.content)
+        if success:
+            return {"success": True, "message": message}
+        else:
+            raise HTTPException(status_code=400, detail=message)
+    except Exception as e:
+        print(f"Error in save_file: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
 
 class DirectoryCreateRequest(BaseModel):
     path: str

@@ -109,12 +109,42 @@ class _TerminalWindowState extends State<TerminalWindow> {
             _outputHistory.add('bite, glomp, slap, kill, kick, happy');
             _outputHistory.add('wink, poke, dance, cringe');
             _outputHistory.add('NSFW Commands:');
+            _outputHistory.add('nsfw <category>  (e.g., nsfw neko, nsfw waifu)');
+            _outputHistory.add('Optional: nsfw hentaicord <category>');
+            _outputHistory.add('Legacy (still works):');
             _outputHistory.add('nsfwwaifu, nsfwneko, nsfwspank, nsfwbite');
             _outputHistory.add('nsfwblowjob, nsfwtrap, nsfwthighs, nsfwass');
             _outputHistory.add('nsfwboobs, nsfwfeet, nsfwfuta, nsfwhentai');
             _outputHistory.add('nsfworgy, nsfwpaizuri, nsfwyaoi, nsfwyuri');
           });
           break;
+        case 'nsfw':
+          if (args.isEmpty) {
+            setState(() {
+              _outputHistory.add('Usage: nsfw <category>');
+              _outputHistory.add('Optional: nsfw hentaicord <category>');
+            });
+          } else {
+            String category;
+            if (args.length >= 2 && args[0].toLowerCase() == 'hentaicord') {
+              category = args[1];
+            } else {
+              category = args[0];
+            }
+            final normalized = category.toLowerCase().replaceAll(RegExp(r'[^a-z]'), '');
+            if (normalized.isEmpty) {
+              setState(() {
+                _outputHistory.add('Usage: nsfw <category>');
+              });
+              break;
+            }
+            setState(() {
+              _outputHistory.add('nsfw $normalized for eshal! >w<');
+            });
+            _sendCommand('nsfw$normalized');
+          }
+          break;
+
           
         case 'clear':
           setState(() {
@@ -893,8 +923,9 @@ class _TerminalWindowState extends State<TerminalWindow> {
         ];
         
         if (mediaExtensions.any((ext) => name.endsWith(ext))) {
-          // It's a media file, open in media player
-          widget.openMediaWindow(item['content'] ?? '', item['name']);
+          // It's a media file, open in media player using URL if available
+          final url = item['content'] ?? item['url'] ?? '';
+          widget.openMediaWindow(url, item['name']);
           setState(() {
             _outputHistory.add('Opening ${item['name']} in media player...');
           });
